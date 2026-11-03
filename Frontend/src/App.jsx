@@ -12,9 +12,9 @@ import Login from "./Components/Login";
 import Cart from "./Components/Cart";
 import Checkout from "./Components/Checkout";
 import Dashboard from "./Components/Dashboard";
-import { getMe, logoutUser } from "./api";
+import { getMe } from "./api";
+import "./api"
 import "./App.css";
-
 export default function App() {
   const [page, setPage] = useState("home");
   const [filters, setFilters] = useState({ gender: "all", type: "all" });
@@ -140,7 +140,6 @@ export default function App() {
   };
 
   const count = cart.reduce((sum, i) => sum + i.qty, 0);
-
   const footer = (
     <Footer
       onCategory={navShop}
