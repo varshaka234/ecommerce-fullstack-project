@@ -24,3 +24,8 @@ export const loginUser = (email, password) =>
   request("/login/", "POST", { email, password });
 export const getMe = () => request("/me/");
 export const logoutUser = () => request("/logout/", "POST");
+
+export const getCart = () => request("/cart/");
+export const saveCart = (items) => request("/cart/", "PUT", items);
+export const getOrders = () => request("/orders/");
+export const createOrder = (details) => request("/orders/", "POST", details);

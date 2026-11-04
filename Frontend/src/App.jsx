@@ -12,25 +12,60 @@ import Login from "./Components/Login";
 import Cart from "./Components/Cart";
 import Checkout from "./Components/Checkout";
 import Dashboard from "./Components/Dashboard";
-import { getMe } from "./api";
-import "./api"
+import { getMe, logoutUser, getCart, saveCart, getOrders, createOrder } from "./api";
 import "./App.css";
+
+// Only send what Django needs
+const cartPayload = (cart) =>
+  cart.map(({ id, name, price, image, qty }) => ({ id, name, price, image, qty }));
+
 export default function App() {
   const [page, setPage] = useState("home");
   const [filters, setFilters] = useState({ gender: "all", type: "all" });
   const [cart, setCart] = useState([]);
+  const [cartReady, setCartReady] = useState(false); // true after the saved cart has loaded
   const [orders, setOrders] = useState([]);
   const [user, setUser] = useState(null);
   const [afterLogin, setAfterLogin] = useState("dashboard");
   const [notice, setNotice] = useState("");
 
+  const showNotice = (text, ms = 1800) => {
+    setNotice(text);
+    setTimeout(() => setNotice(""), ms);
+  };
+
+  // Load the saved cart and orders from Django
+  const loadUserData = () => {
+    getCart()
+      .then((items) => {
+        setCart(items);
+        setCartReady(true);
+      })
+      .catch(() => {});
+    getOrders().then(setOrders).catch(() => {});
+  };
+
   // Stay logged in after a refresh
   useEffect(() => {
     if (!localStorage.getItem("token")) return;
     getMe()
-      .then((u) => setUser(u.name || u.email))
+      .then((u) => {
+        setUser(u.name || u.email);
+        loadUserData();
+      })
       .catch(() => localStorage.removeItem("token"));
   }, []);
+
+  // Save the cart in Django 0.4 seconds after the last change
+  useEffect(() => {
+    if (!user || !cartReady) return;
+    const timer = setTimeout(() => {
+      saveCart(cartPayload(cart)).catch(() =>
+        showNotice("Could not save your cart. Is Django running?", 2500)
+      );
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [cart]);
 
   // ---------- navigation ----------
   const toTop = () => setTimeout(() => window.scrollTo({ top: 0 }), 20);
@@ -45,21 +80,18 @@ export default function App() {
     setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 50);
   };
 
-  // Open the Shop page with a filter already chosen
   const goShop = (gender = "all", type = "all") => {
     setFilters({ gender, type });
     setPage("shop");
     toTop();
   };
 
-  // Menu links: everything / women / men / accessories
   const navShop = (id) => {
     if (id === "women" || id === "men") goShop(id, "all");
     else if (id === "accessories") goShop("all", "eyewear");
     else goShop();
   };
 
-  // Which menu link is underlined
   let navActive = "";
   if (page === "shop") {
     if (filters.gender === "all" && filters.type === "all") navActive = "all";
@@ -79,10 +111,12 @@ export default function App() {
       if (found) {
         return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
       }
-      return [...prev, { ...product, qty: 1 }];
+      return [
+        ...prev,
+        { id: product.id, name: product.name, price: product.price, image: product.image, qty: 1 },
+      ];
     });
-    setNotice(`${product.name} added to cart`);
-    setTimeout(() => setNotice(""), 1800);
+    showNotice(`${product.name} added to cart`);
   };
 
   const changeQty = (id, delta) =>
@@ -92,15 +126,9 @@ export default function App() {
 
   const removeItem = (id) => setCart((prev) => prev.filter((i) => i.id !== id));
 
-  const placeOrder = (payment) => {
-    const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-    const order = {
-      id: Date.now().toString().slice(-6),
-      items: cart,
-      total,
-      payment,
-      date: new Date().toLocaleDateString(),
-    };
+  const placeOrder = async (details) => {
+    await saveCart(cartPayload(cart)); // make sure Django has the latest cart
+    const order = await createOrder(details);
     setOrders([order, ...orders]);
     setCart([]);
     setPage("success");
@@ -124,6 +152,7 @@ export default function App() {
   const handleLogin = (data) => {
     localStorage.setItem("token", data.token);
     setUser(data.user.name || data.user.email);
+    loadUserData();
     setPage(afterLogin);
     setAfterLogin("dashboard");
   };
@@ -136,10 +165,12 @@ export default function App() {
     setUser(null);
     setCart([]);
     setOrders([]);
+    setCartReady(false);
     goHome();
   };
 
   const count = cart.reduce((sum, i) => sum + i.qty, 0);
+
   const footer = (
     <Footer
       onCategory={navShop}

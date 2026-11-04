@@ -4,24 +4,24 @@ export default function Checkout({ items = [], placeOrder = () => {}, setPage = 
   const [form, setForm] = useState({ name: "", phone: "", address: "", upi: "", card: "", expiry: "", cvv: "" });
   const [method, setMethod] = useState("Cash on delivery");
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    placeOrder(method);
-  };
-
-  if (items.length === 0) {
-    return (
-      <section className="panel">
-        <h2>Checkout</h2>
-        <p className="muted">Your cart is empty.</p>
-        <button className="btn btn-dark" onClick={() => setPage("home")}>Continue shopping</button>
-      </section>
-    );
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  try {
+    await placeOrder({
+      name: form.name,
+      phone: form.phone,
+      address: form.address,
+      payment: method,
+    });
+  } catch (err) {
+    setError(err.message);
   }
-
+};
   return (
     <section className="panel">
       <h2>Checkout</h2>
@@ -56,7 +56,7 @@ export default function Checkout({ items = [], placeOrder = () => {}, setPage = 
           <span>Total to pay</span>
           <span>${total.toFixed(2)}</span>
         </div>
-
+       {error && <p className="auth-error">{error}</p>}
         <div className="btn-row">
           <button type="button" className="btn btn-dark" onClick={() => setPage("cart")}>Back</button>
           <button className="btn btn-dark">Pay ${total.toFixed(2)}</button>
