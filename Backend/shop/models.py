@@ -1,3 +1,4 @@
+
 from django.conf import settings
 from django.db import models
 
@@ -16,7 +17,10 @@ class Product(models.Model):
     type = models.CharField(max_length=20, choices=TYPES)
     for_women = models.BooleanField(default=False)
     for_men = models.BooleanField(default=False)
-    image = models.CharField(max_length=300, help_text="Path in the public folder, for example /Tank.jpeg")
+    image = models.CharField(
+        max_length=300,
+        help_text="Path in the public folder, for example /Tank.jpeg"
+    )
     sale = models.BooleanField(default=False)
     featured = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
@@ -26,7 +30,11 @@ class Product(models.Model):
 
 
 class CartItem(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="cart_items")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="cart_items"
+    )
     product_id = models.IntegerField()
     name = models.CharField(max_length=200)
     price = models.DecimalField(max_digits=8, decimal_places=2)
@@ -35,7 +43,10 @@ class CartItem(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["user", "product_id"], name="unique_cart_product")
+            models.UniqueConstraint(
+                fields=["user", "product_id"],
+                name="unique_cart_product"
+            )
         ]
 
     def __str__(self):
@@ -43,12 +54,29 @@ class CartItem(models.Model):
 
 
 class Order(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders")
+    STATUS_CHOICES = [
+        ("Pending", "Pending"),
+        ("Confirmed", "Confirmed"),
+        ("Shipped", "Shipped"),
+        ("Delivered", "Delivered"),
+        ("Cancelled", "Cancelled"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="orders"
+    )
     total = models.DecimalField(max_digits=10, decimal_places=2)
     payment = models.CharField(max_length=50)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
     address = models.TextField()
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="Pending"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -59,7 +87,11 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
     product_id = models.IntegerField()
     name = models.CharField(max_length=200)
     price = models.DecimalField(max_digits=8, decimal_places=2)

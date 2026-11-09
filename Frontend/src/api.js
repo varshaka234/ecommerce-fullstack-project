@@ -29,3 +29,21 @@ export const getCart = () => request("/cart/");
 export const saveCart = (items) => request("/cart/", "PUT", items);
 export const getOrders = () => request("/orders/");
 export const createOrder = (details) => request("/orders/", "POST", details);
+// Admin product management
+export const getAdminProducts = () =>
+  request("/admin/products/");
+
+export const addProduct = (product) =>
+  request("/admin/products/", "POST", product);
+
+export const updateProduct = (id, product) =>
+  request(`/admin/products/${id}/`, "PUT", product);
+
+export const deleteProduct = (id) =>
+  request(`/admin/products/${id}/`, "DELETE");
+
+export const getAdminOrders = () =>
+  request("/admin/orders/");
+
+export const updateAdminOrderStatus = (id, status) =>
+  request(`/admin/orders/${id}/status/`, "PATCH", { status });

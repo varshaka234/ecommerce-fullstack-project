@@ -1,6 +1,12 @@
 from django.db import transaction
 from rest_framework import status
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import (
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+    UpdateAPIView,
+    
+)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,8 +18,18 @@ from .serializers import (
     CheckoutSerializer,
     OrderSerializer,
     ProductSerializer,
+     AdminOrderStatusSerializer,
 )
+from rest_framework.permissions import BasePermission
 
+
+class IsAdminUser(BasePermission):
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.is_superuser
+        )
 
 class ProductList(ListAPIView):
     queryset = Product.objects.filter(active=True).order_by("id")
@@ -21,6 +37,16 @@ class ProductList(ListAPIView):
     permission_classes = [AllowAny]
     authentication_classes = []
     pagination_class = None
+class AdminProductList(ListCreateAPIView):
+    queryset = Product.objects.all().order_by("id")
+    serializer_class = ProductSerializer
+    permission_classes = [IsAdminUser]
+
+
+class AdminProductDetail(RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAdminUser]
 
 
 class CartView(APIView):
@@ -93,3 +119,17 @@ class OrderListCreate(APIView):
             CartItem.objects.filter(user=request.user).delete()
 
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+
+class AdminOrderList(ListAPIView):
+    permission_classes = [IsAdminUser]
+    serializer_class = OrderSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return Order.objects.all().select_related("user").prefetch_related("items")
+class AdminOrderStatusUpdate(UpdateAPIView):
+    queryset = Order.objects.all()
+    serializer_class = AdminOrderStatusSerializer
+    permission_classes = [IsAdminUser]
+    http_method_names = ["patch", "options", "head"]

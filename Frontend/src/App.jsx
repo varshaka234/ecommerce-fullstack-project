@@ -12,20 +12,41 @@ import Login from "./Components/Login";
 import Cart from "./Components/Cart";
 import Checkout from "./Components/Checkout";
 import Dashboard from "./Components/Dashboard";
-import { getMe, logoutUser, getCart, saveCart, getOrders, createOrder } from "./api";
+import AdminDashboard from "./Components/AdminDashboard";
+
+import {
+  getMe,
+  logoutUser,
+  getCart,
+  saveCart,
+  getOrders,
+  createOrder,
+} from "./api";
 import "./App.css";
 
 // Only send what Django needs
 const cartPayload = (cart) =>
-  cart.map(({ id, name, price, image, qty }) => ({ id, name, price, image, qty }));
+  cart.map(({ id, name, price, image, qty }) => ({
+    id,
+    name,
+    price,
+    image,
+    qty,
+  }));
 
 export default function App() {
   const [page, setPage] = useState("home");
-  const [filters, setFilters] = useState({ gender: "all", type: "all" });
+  const [filters, setFilters] = useState({
+    gender: "all",
+    type: "all",
+  });
+
   const [cart, setCart] = useState([]);
-  const [cartReady, setCartReady] = useState(false); // true after the saved cart has loaded
+  const [cartReady, setCartReady] = useState(false);
   const [orders, setOrders] = useState([]);
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
+
   const [afterLogin, setAfterLogin] = useState("dashboard");
   const [notice, setNotice] = useState("");
 
@@ -34,7 +55,7 @@ export default function App() {
     setTimeout(() => setNotice(""), ms);
   };
 
-  // Load the saved cart and orders from Django
+  // Load saved cart and orders from Django
   const loadUserData = () => {
     getCart()
       .then((items) => {
@@ -42,32 +63,50 @@ export default function App() {
         setCartReady(true);
       })
       .catch(() => {});
-    getOrders().then(setOrders).catch(() => {});
+
+    getOrders()
+      .then(setOrders)
+      .catch(() => {});
   };
 
-  // Stay logged in after a refresh
+  // Stay logged in after refresh
   useEffect(() => {
     if (!localStorage.getItem("token")) return;
+
     getMe()
       .then((u) => {
         setUser(u.name || u.email);
+        setRole(u.role);
+
+        if (u.role === "admin") {
+          setPage("admin-dashboard");
+        } else {
+          setPage("dashboard");
+        }
+
         loadUserData();
       })
-      .catch(() => localStorage.removeItem("token"));
+      .catch(() => {
+        localStorage.removeItem("token");
+        setUser(null);
+        setRole(null);
+      });
   }, []);
 
-  // Save the cart in Django 0.4 seconds after the last change
+  // Save cart in Django after the last change
   useEffect(() => {
     if (!user || !cartReady) return;
+
     const timer = setTimeout(() => {
       saveCart(cartPayload(cart)).catch(() =>
-        showNotice("Could not save your cart. Is Django running?", 2500)
+        showNotice("Could not save your cart. Is Django running?", 2500),
       );
     }, 400);
+
     return () => clearTimeout(timer);
   }, [cart]);
 
-  // ---------- navigation ----------
+  // Navigation
   const toTop = () => setTimeout(() => window.scrollTo({ top: 0 }), 20);
 
   const goHome = () => {
@@ -77,7 +116,10 @@ export default function App() {
 
   const goSection = (id) => {
     setPage("home");
-    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 50);
+    setTimeout(
+      () => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }),
+      50,
+    );
   };
 
   const goShop = (gender = "all", type = "all") => {
@@ -87,54 +129,79 @@ export default function App() {
   };
 
   const navShop = (id) => {
-    if (id === "women" || id === "men") goShop(id, "all");
-    else if (id === "accessories") goShop("all", "eyewear");
-    else goShop();
+    if (id === "women" || id === "men") {
+      goShop(id, "all");
+    } else if (id === "accessories") {
+      goShop("all", "eyewear");
+    } else {
+      goShop();
+    }
   };
 
   let navActive = "";
+
   if (page === "shop") {
-    if (filters.gender === "all" && filters.type === "all") navActive = "all";
-    else if (filters.type === "all") navActive = filters.gender;
-    else if (filters.gender === "all" && filters.type === "eyewear") navActive = "accessories";
+    if (filters.gender === "all" && filters.type === "all") {
+      navActive = "all";
+    } else if (filters.type === "all") {
+      navActive = filters.gender;
+    } else if (filters.gender === "all" && filters.type === "eyewear") {
+      navActive = "accessories";
+    }
   }
 
-  // ---------- cart ----------
+  // Cart
   const addToCart = (product) => {
     if (!user) {
       setAfterLogin(page === "shop" ? "shop" : "home");
       setPage("login");
       return;
     }
+
     setCart((prev) => {
       const found = prev.find((i) => i.id === product.id);
+
       if (found) {
-        return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+        return prev.map((i) =>
+          i.id === product.id ? { ...i, qty: i.qty + 1 } : i,
+        );
       }
+
       return [
         ...prev,
-        { id: product.id, name: product.name, price: product.price, image: product.image, qty: 1 },
+        {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          qty: 1,
+        },
       ];
     });
+
     showNotice(`${product.name} added to cart`);
   };
 
   const changeQty = (id, delta) =>
     setCart((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, qty: i.qty + delta } : i)).filter((i) => i.qty > 0)
+      prev
+        .map((i) => (i.id === id ? { ...i, qty: i.qty + delta } : i))
+        .filter((i) => i.qty > 0),
     );
 
   const removeItem = (id) => setCart((prev) => prev.filter((i) => i.id !== id));
 
   const placeOrder = async (details) => {
-    await saveCart(cartPayload(cart)); // make sure Django has the latest cart
+    await saveCart(cartPayload(cart));
+
     const order = await createOrder(details);
+
     setOrders([order, ...orders]);
     setCart([]);
     setPage("success");
   };
 
-  // ---------- login ----------
+  // Login navigation
   const handleLoginClick = () => {
     setAfterLogin("dashboard");
     setPage("login");
@@ -146,26 +213,42 @@ export default function App() {
       setPage("login");
       return;
     }
+
     setPage("cart");
   };
 
+  // Handle successful login
   const handleLogin = (data) => {
     localStorage.setItem("token", data.token);
+
     setUser(data.user.name || data.user.email);
+    setRole(data.user.role);
+
     loadUserData();
-    setPage(afterLogin);
+
+    if (data.user.role === "admin") {
+      setPage("admin-dashboard");
+    } else {
+      setPage(afterLogin);
+    }
+
     setAfterLogin("dashboard");
   };
 
+  // Logout
   const handleLogout = async () => {
     try {
       await logoutUser();
     } catch (e) {}
+
     localStorage.removeItem("token");
+
     setUser(null);
+    setRole(null);
     setCart([]);
     setOrders([]);
     setCartReady(false);
+
     goHome();
   };
 
@@ -223,23 +306,50 @@ export default function App() {
       )}
 
       {page === "contact" && <Contact />}
+
       {page === "login" && <Login onLogin={handleLogin} />}
+
       {page === "dashboard" && (
-        <Dashboard user={user} cartCount={count} orders={orders} setPage={setPage} onLogout={handleLogout} />
+        <Dashboard
+          user={user}
+          cartCount={count}
+          orders={orders}
+          setPage={setPage}
+          onLogout={handleLogout}
+        />
       )}
+
+      {page === "admin-dashboard" && <AdminDashboard onLogout={handleLogout} />}
+
       {page === "cart" && (
-        <Cart items={cart} changeQty={changeQty} removeItem={removeItem} setPage={setPage} />
+        <Cart
+          items={cart}
+          changeQty={changeQty}
+          removeItem={removeItem}
+          setPage={setPage}
+        />
       )}
+
       {page === "checkout" && (
         <Checkout items={cart} placeOrder={placeOrder} setPage={setPage} />
       )}
+
       {page === "success" && (
         <section className="panel center">
           <h2>Order placed</h2>
           <p>Thank you! Your order has been saved in your dashboard.</p>
+
           <div className="btn-row center-row">
-            <button className="btn btn-dark" onClick={() => setPage("dashboard")}>View my orders</button>
-            <button className="btn btn-dark" onClick={() => goShop()}>Keep shopping</button>
+            <button
+              className="btn btn-dark"
+              onClick={() => setPage("dashboard")}
+            >
+              View my orders
+            </button>
+
+            <button className="btn btn-dark" onClick={() => goShop()}>
+              Keep shopping
+            </button>
           </div>
         </section>
       )}

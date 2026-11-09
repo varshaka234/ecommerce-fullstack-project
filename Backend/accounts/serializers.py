@@ -6,10 +6,16 @@ from rest_framework import serializers
 
 class UserSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="first_name")
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["name", "email"]
+        fields = ["name", "email", "role"]
+
+    def get_role(self, obj):
+        if obj.is_superuser:
+            return "admin"
+        return "customer"
 
 
 class RegisterSerializer(serializers.Serializer):
