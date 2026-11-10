@@ -1,4 +1,4 @@
-const API = "/api";
+const API = import.meta.env.VITE_API_URL || "/api";
 
 async function request(path, method = "GET", body) {
   const token = localStorage.getItem("token");
@@ -20,9 +20,22 @@ async function request(path, method = "GET", body) {
 
 export const registerUser = (name, email, password) =>
   request("/register/", "POST", { name, email, password });
+
 export const loginUser = (email, password) =>
   request("/login/", "POST", { email, password });
+
 export const getMe = () => request("/me/");
+
+export const forgotPassword = (email) =>
+  request("/forgot-password/", "POST", { email });
+
+export const resetPassword = (uid, token, new_password) =>
+  request("/reset-password/", "POST", {
+    uid,
+    token,
+    new_password,
+  });
+
 export const logoutUser = () => request("/logout/", "POST");
 
 export const getCart = () => request("/cart/");

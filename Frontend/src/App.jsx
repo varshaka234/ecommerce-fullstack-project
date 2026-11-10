@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+
 import Navbar from "./Components/Navbar";
 import Hero from "./Components/Hero";
 import PromoCards from "./Components/PromoCards";
@@ -13,6 +14,8 @@ import Cart from "./Components/Cart";
 import Checkout from "./Components/Checkout";
 import Dashboard from "./Components/Dashboard";
 import AdminDashboard from "./Components/AdminDashboard";
+import ForgotPassword from "./Components/ForgotPassword";
+import ResetPassword from "./Components/ResetPassword";
 
 import {
   getMe,
@@ -22,6 +25,7 @@ import {
   getOrders,
   createOrder,
 } from "./api";
+
 import "./App.css";
 
 // Only send what Django needs
@@ -35,15 +39,28 @@ const cartPayload = (cart) =>
   }));
 
 export default function App() {
-  const [page, setPage] = useState("home");
+  // Read UID and token from the password reset URL
+  const pathParts = window.location.pathname.split("/");
+  const isResetRoute = window.location.pathname.startsWith("/r/");
+
+  const resetUid = pathParts[2] || "";
+  const resetToken = pathParts[3] || "";
+
+  // Page navigation
+  const [page, setPage] = useState(isResetRoute ? "reset-password" : "home");
+
+  // Shop filters
   const [filters, setFilters] = useState({
     gender: "all",
     type: "all",
   });
 
+  // Cart and orders
   const [cart, setCart] = useState([]);
   const [cartReady, setCartReady] = useState(false);
   const [orders, setOrders] = useState([]);
+
+  // User authentication
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
 
@@ -71,6 +88,9 @@ export default function App() {
 
   // Stay logged in after refresh
   useEffect(() => {
+    // Do not redirect away from the password reset page
+    if (isResetRoute) return;
+
     if (!localStorage.getItem("token")) return;
 
     getMe()
@@ -111,11 +131,13 @@ export default function App() {
 
   const goHome = () => {
     setPage("home");
+
     setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
   };
 
   const goSection = (id) => {
     setPage("home");
+
     setTimeout(
       () => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }),
       50,
@@ -280,17 +302,22 @@ export default function App() {
 
       {notice && <div className="toast">{notice}</div>}
 
+      {/* Home */}
       {page === "home" && (
         <>
           <Hero onShop={() => goShop()} onFind={() => goSection("offers")} />
+
           <SocialIcons />
           <PromoCards onShop={goShop} />
+
           <Products addToCart={addToCart} onShop={() => goShop()} />
+
           <About />
           {footer}
         </>
       )}
 
+      {/* Shop */}
       {page === "shop" && (
         <>
           <Shop
@@ -301,14 +328,40 @@ export default function App() {
             onCart={() => setPage("cart")}
             onCheckout={() => setPage("checkout")}
           />
+
           {footer}
         </>
       )}
 
+      {/* Contact */}
       {page === "contact" && <Contact />}
 
-      {page === "login" && <Login onLogin={handleLogin} />}
+      {/* Login */}
+      {page === "login" && (
+        <Login
+          onLogin={handleLogin}
+          onForgotPassword={() => setPage("forgot-password")}
+        />
+      )}
 
+      {/* Forgot Password */}
+      {page === "forgot-password" && (
+        <ForgotPassword onBack={() => setPage("login")} />
+      )}
+
+      {/* Reset Password */}
+      {page === "reset-password" && (
+        <ResetPassword
+          uid={resetUid}
+          token={resetToken}
+          onBack={() => {
+            window.history.pushState({}, "", "/");
+            setPage("login");
+          }}
+        />
+      )}
+
+      {/* Customer Dashboard */}
       {page === "dashboard" && (
         <Dashboard
           user={user}
@@ -319,8 +372,10 @@ export default function App() {
         />
       )}
 
+      {/* Admin Dashboard */}
       {page === "admin-dashboard" && <AdminDashboard onLogout={handleLogout} />}
 
+      {/* Cart */}
       {page === "cart" && (
         <Cart
           items={cart}
@@ -330,13 +385,16 @@ export default function App() {
         />
       )}
 
+      {/* Checkout */}
       {page === "checkout" && (
         <Checkout items={cart} placeOrder={placeOrder} setPage={setPage} />
       )}
 
+      {/* Order Success */}
       {page === "success" && (
         <section className="panel center">
           <h2>Order placed</h2>
+
           <p>Thank you! Your order has been saved in your dashboard.</p>
 
           <div className="btn-row center-row">
