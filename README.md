@@ -1,17 +1,12 @@
-# E-Commerce Full-Stack Web Application
+# E-Commerce Full-Stack Application
 
-A full-stack e-commerce web application developed using **React.js, Django REST Framework, and PostgreSQL**. The application allows users to browse products, register and log in, manage their shopping cart, and place orders.
+A full-stack e-commerce web application built using **React.js, Django REST Framework, and PostgreSQL**. The application supports customer shopping, admin product management, authentication, and order management with Role-Based Access Control (RBAC).
 
-## Features
+## Live Demo
 
-- **User Authentication:** User registration, login, and logout.
-- **Product Listing:** Browse products across different categories.
-- **Product Filtering:** Filter products by category and gender.
-- **Shopping Cart:** Add products, update quantities, and remove items.
-- **Cart Persistence:** Store cart information in PostgreSQL.
-- **Checkout:** Review cart items and proceed through the checkout process.
-- **Order Management:** Store and manage customer orders.
-- **Admin Panel:** Manage application data through Django Admin.
+- **Frontend:** https://ecommerce-fullstack-project-phi.vercel.app
+- **Backend:** https://ecommerce-backend-4zzc.onrender.com
+- **GitHub:** https://github.com/varshaka234/ecommerce-fullstack-project
 
 ## Technologies Used
 
@@ -20,63 +15,64 @@ A full-stack e-commerce web application developed using **React.js, Django REST 
 - JavaScript
 - HTML5
 - CSS3
-- Vite
 
 ### Backend
 - Python
 - Django
 - Django REST Framework
+- Django ORM
 - REST APIs
-- Token Authentication
 
 ### Database
 - PostgreSQL
+- Neon PostgreSQL
 
-### Tools
-- Visual Studio Code
-- Git
-- GitHub
-- Postman
+### Testing & Deployment
+- Playwright
+- Git & GitHub
+- Vercel
+- Render
 
-## Project Structure
+## Features
 
-```text
-ecommerce-fullstack-project/
-│
-├── Frontend/
-│   ├── public/
-│   └── src/
-│       ├── Components/
-│       ├── data.js
-│       ├── api.js
-│       ├── App.jsx
-│       └── main.jsx
-│
-├── Backend/
-│   ├── accounts/
-│   ├── shop/
-│   ├── config/
-│   ├── manage.py
-│   └── requirements.txt
-│
-└── README.md
-```
+### Customer Features
+- User registration and login
+- Browse and filter products
+- Add products to shopping cart
+- Manage shopping cart
+- Checkout and place orders
+- View order history
 
-## Installation and Setup
+### Admin Features
+- Admin authentication
+- Role-Based Access Control (RBAC)
+- Add new products
+- Edit and delete products
+- Search and manage products
+- View customer orders
+- Manage order status
+
+## Project Architecture
+
+The application follows a full-stack architecture:
+
+- **React.js:** Handles the user interface and frontend interactions.
+- **Django REST Framework:** Provides REST APIs and backend business logic.
+- **Django ORM:** Handles database operations.
+- **PostgreSQL:** Stores users, products, cart items, and orders.
+
+## Local Installation and Setup
 
 ### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/varshaka234/ecommerce-fullstack-project.git
-```
-
-```bash
 cd ecommerce-fullstack-project
 ```
 
 ### 2. Backend Setup
 
-Open a terminal and navigate to the Backend folder:
+Open the Backend folder:
 
 ```bash
 cd Backend
@@ -88,7 +84,7 @@ Create a virtual environment:
 python -m venv venv
 ```
 
-Activate the virtual environment on Windows:
+Activate it on Windows:
 
 ```bash
 venv\Scripts\activate
@@ -100,7 +96,7 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Configure your PostgreSQL database credentials in the Django environment settings.
+Configure your environment variables in a `.env` file. Add your Django secret key and PostgreSQL database configuration. Never commit real credentials.
 
 Run database migrations:
 
@@ -120,7 +116,7 @@ Backend runs at:
 
 ### 3. Frontend Setup
 
-Open another terminal and navigate to the Frontend folder:
+Open a new terminal and navigate to the Frontend folder:
 
 ```bash
 cd Frontend
@@ -132,43 +128,52 @@ Install dependencies:
 npm install
 ```
 
-Start the React development server:
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-Open the local URL displayed in the terminal (usually `http://localhost:5173/`).
+Frontend runs at:
 
-## API Endpoints
+`http://localhost:5173/`
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/register/` | Register a new user |
-| POST | `/api/login/` | User login |
-| POST | `/api/logout/` | User logout |
-| GET | `/api/me/` | Get logged-in user details |
-| GET | `/api/cart/` | Retrieve cart items |
-| POST | `/api/cart/` | Add an item to the cart |
+Make sure the frontend API configuration points to your local Django backend when running locally.
 
-## Database
+## Testing
 
-PostgreSQL is used to store application data, including user accounts, products, cart items, and orders.
+End-to-end testing is performed using Playwright.
 
-## Future Improvements
+Install Playwright browsers:
 
-- Payment gateway integration
-- Product search functionality
-- Order tracking
-- User profile management
-- Product reviews and ratings
+```bash
+npx playwright install chromium
+```
 
-## Author
+Run the tests:
 
-**Varsha K A**
+```bash
+npx playwright test
+```
 
-GitHub: [varshaka234](https://github.com/varshaka234)
+## Deployment
+
+| Component | Platform |
+|---|---|
+| Frontend | Vercel |
+| Backend | Render |
+| Database | Neon PostgreSQL |
+
+## Key Learning Outcomes
+
+- Full-stack application development
+- REST API development and integration
+- Database design and Django ORM
+- Authentication and Role-Based Access Control
+- React component-based development
+- End-to-end testing with Playwright
+- Application deployment and Git version control
 
 ---
 
-*This project was developed as a hands-on full-stack web development project to practice frontend development, backend API development, database management, and application integration.*
+**Developed as a full-stack development portfolio project.**
