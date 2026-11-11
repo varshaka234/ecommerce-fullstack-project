@@ -26,3 +26,8 @@ venv/
 # Django generated files
 staticfiles/
 media/
+
+*.sql
+*.dump
+
+/Backend/products.json
